@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تطبيق أذكار الصباح الصوتي</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        .app-bar {
+            background-color: #2d6a4f;
+            color: white;
+            width: 100%;
+            max-width: 550px;
+            text-align: center;
+            padding: 15px;
+            font-size: 22px;
+            font-weight: bold;
+            border-radius: 12px 12px 0 0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .card {
+            background: white;
+            width: 100%;
+            max-width: 550px;
+            min-height: 250px;
+            padding: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-size: 22px;
+            line-height: 1.7;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            border-bottom: 1px solid #eee;
+        }
+        .controls-container {
+            display: flex;
+            width: 100%;
+            max-width: 550px;
+            gap: 10px;
+        }
+        .btn-counter {
+            background-color: #40916c;
+            color: white;
+            border: none;
+            flex: 2;
+            padding: 25px;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 0 0 12px 0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: background 0.2s;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .btn-counter:active {
+            background-color: #1b4332;
+        }
+        .btn-pause {
+            background-color: #d97706; /* لون برتقالي مميز للإيقاف */
+            color: white;
+            border: none;
+            flex: 1;
+            padding: 25px;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 0 0 0 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: background 0.2s;
+            display: none; /* يظهر فقط بعد بدء التطبيق */
+        }
+        .btn-pause:active {
+            background-color: #b45309;
+        }
+        .progress {
+            margin-top: 15px;
+            font-size: 16px;
+            color: #666;
+            font-weight: bold;
+        }
+        .audio-status {
+            font-size: 14px;
+            color: #2d6a4f;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-bar">أذكار الصباح الصوتية</div>
+    
+    <div class="card" id="azkar-text">تحميل الذكر...</div>
+    
+    <div class="controls-container">
+        <button class="btn-counter" id="counter-btn" onclick="handleClick()">اضغط هنا لتشغيل الصوت والبدء</button>
+        <button class="btn-pause" id="pause-btn" onclick="togglePause()">إيقاف مؤقت</button>
+    </div>
+    
+    <div class="progress" id="progress-text">1 / 23</div>
+    <div class="audio-status" id="audio-status">في انتظار بدء التشغيل...</div>
+
+    <audio id="audio-player"></audio>
+
+    <script>
+        const azkar = [
+            { text: "بسم الله والحمد لله وصلاة والسلام علي رسول الله.", count: 1, audio: "Morning1.mp3" },
+            { text: "سبحان الله وبحمده عدد خلقه ورضا نفسه وزنة عرشه ومداد كلماته.", count: 3, audio: "Morning2.mp3" },
+            { text: "لا إله إلا وحده لا شريك له له الملك وله الحمد يحيي ويميت بيده الخير وهو علي كل شيء قدير.", count: 1, audio: "Morning3.mp3" },
+            { text: "أصبحنا وأصبح الملك لله رب العالمين، اللهم إنا نسألك خير هذا اليوم فتحه ونصره ونوره وبركته وهداه، ونعوذ بك من شر ما فيه وشر ما بعده.", count: 1, audio: "Morning4.mp3" },
+            { text: "أصبحنا وأصبح الملك لله والحمد لله، لا إله إلا الله وحده لا شريك له.، له الملك وله الحمد وهو علي كل شئ قدير، رب نسألك خير ما في هذا اليوم وخير ما بعده، ونعوذ بك من شر ما في هذا اليوم وشر ما بعده، رب نعوذ بك من الكسل وسوء الكبر، رب نعوذ بك من عذاب في النار وعذاب في القبر.", count: 1, audio: "Morning5.mp3" },
+            { text: "أصبحنا علي فطرة الإسلام وعلي كلمة الإخلاص وعلي دين نبينا محمد صلي الله عليه وسلم، وعلي ملة أبينا إبراهيم حنيفا مسلما وما كان من المشركين.", count: 1, audio: "Morning6.mp3" },
+            { text: "اللهم بك أصبحنا وبك أمسينا وبك نحيا وبك نموت وإليك النشور.", count: 1, audio: "Morning7.mp3" },
+            { text: "اللهم إنا أصبحنا نشهدك، ونشهد حملة عرشك.، وملائكتك وجميع خلقك، أنك أنت الله لا إله إلا أنت وحدك لا شريك لك، وأن محمدا عبدك ورسولك.", count: 4, audio: "Morning8.mp3" },
+            { text: "اللهم ما أصبح بنا من نعمة أو ب أحدٍ من خلقك ف منك وحدك لا شريك لك فلك الحمد ولك الشكر.", count: 1, audio: "Morning9.mp3" },
+            { text: "اللهم إنا نعوذ بكلماتك التامات من شر ما خلقت.", count: 3, audio: "Morning10.mp3" },
+            { text: "بسم الله الذي لا يضر ما إسمه شئ في الأرض ولا في السماء وهو السميع العليم.", count: 3, audio: "Morning11.mp3" },
+            { text: "رضينا بالله ربا، وبالإسلام دينا، وبمحمد صلي الله عليه وسلم نبيا.", count: 3, audio: "Morning12.mp3" },
+            { text: "حسبنا الله، لا إله إلا هو عليه توكلنا وهو رب العرش العظيم.", count: 7, audio: "Morning13.mp3" },
+            { text: "اللهم أجرنا من النار.", count: 7, audio: "Morning14.mp3" },
+            { text: "اللهم إنا نسألك العفو والعافية في الدنيا والآخرة، اللهم إنا نسألك العفو والعافية في ديننا ودنيانا وأهلينا وأموالنا، اللهم استر عوراتنا، وآمن روعاتنا، اللهم احفظنا من بين أيدينا، ومن خلفنا، وعن أيماننا وعن شمائلنا، ومن فوقنا، ونعوذ بعظمتك أن نغتال من تحتنا.", count: 1, audio: "Morning15.mp3" },
+            { text: "اللهم عافنا في أبداننا، اللهم عافنا في أسماعنا، اللهم عافنا في أبصارنا... لا إله إلا أنت، اللهم إنا نعوذ بك من الكفر والفقر، ونعوذ بك من عذاب القبر... لا إله إلا أنت.", count: 1, audio: "Morning16.mp3" },
+            { text: "اللهم عالم الغيب والشهادة فاطر السماوات والأرض رب كل شئ ومليكه نشهد ألا إله إلا أنت، نعوذ بك من شرور أنفسنا ومن شر الشيطان وشركه وأن نقترف علي أنفسنا سوءا أو نجره إلي مسلم.", count: 1, audio: "Morning17.mp3" },
+            { text: "اللهم إنا نسألك علما نافعا، ورزقا طيبا، وعملا متقبلا.", count: 1, audio: "Morning18.mp3" },
+            { text: "يا حي يا قيوم برحمتك نستغيث، أصلح لنا شأننا كله ولا تكلنا إلى أنفسنا طرفة عين.", count: 3, audio: "Morning19.mp3" },
+            { text: "اللهم أنت ربنا لا إله إلا أنت خلقتنا ونحن عبيدك ونحن علي عهدك ووعدك ما استطعنا نعوذ بك من شر ما صنعنا نبوء لك بنعمتك علينا ونبوء بذنوبنا فاغفر لنا فإنه لا يغفر الذنوب إلا أنت.", count: 1, audio: "Morning20.mp3" },
+            { text: "اللهم صلي علي محمد وعلي آل محمد كما صليت علي ابراهيم وعلي آل ابراهيم إنك حميد مجيد، وبارك على محمد وعلي آل محمد كما باركت على ابراهيم وعلي آل ابراهيم إنك حميد مجيد..", count: 10, audio: "Morning21.mp3" },
+            { text: "لا إله إلا الله وحده لا شريك له، له الملك وله الحمد وهو علي كل شيء قدير.", count: 100, audio: "Morning22.mp3" },
+            { text: "سبحان الله وبحمده.", count: 100, audio: "Morning23.mp3" }
+        ];
+
+        let currentIndex = 0;
+        let currentCount = azkar[currentIndex].count;
+        let isStarted = false; 
+        let isPaused = false;
+        const player = document.getElementById('audio-player');
+        const pauseBtn = document.getElementById('pause-btn');
+
+        function updateScreen() {
+            document.getElementById('azkar-text').innerText = azkar[currentIndex].text;
+            document.getElementById('counter-btn').innerText = "المتبقي: " + currentCount;
+            document.getElementById('progress-text').innerText = "ذكر " + (currentIndex + 1) + " من " + azkar.length;
+            
+            player.src = azkar[currentIndex].audio;
+            isPaused = false;
+            pauseBtn.innerText = "إيقاف مؤقت";
+            
+            player.play().then(() => {
+                document.getElementById('audio-status').innerText = "جاري تشغيل الصوت الحالي...";
+            }).catch(e => {
+                document.getElementById('audio-status').innerText = "اضغط على الزر لتفعيل الصوت";
+            });
+        }
+
+        player.onended = function() {
+            if (currentCount > 1) {
+                currentCount--;
+                document.getElementById('counter-btn').innerText = "المتبقي: " + currentCount;
+                player.play();
+            } else {
+                if (currentIndex < azkar.length - 1) {
+                    currentIndex++;
+                    currentCount = azkar[currentIndex].count;
+                    updateScreen();
+                } else {
+                    document.getElementById('audio-status').innerText = "تم الانتهاء بحمد الله";
+                    alert("الحمد لله! تم الانتهاء من جميع أذكار الصباح.");
+                    currentIndex = 0;
+                    currentCount = azkar[currentIndex].count;
+                    isStarted = false;
+                    resetToStartScreen();
+                }
+            }
+        };
+
+        function handleClick() {
+            if (!isStarted) {
+                isStarted = true;
+                pauseBtn.style.display = "block"; // إظهار زر الإيقاف عند البدء
+                updateScreen();
+                return;
+            }
+
+            // إذا ضغط يدوياً للتخطي
+            player.pause();
+            if (currentCount > 1) {
+                currentCount--;
+                document.getElementById('counter-btn').innerText = "المتبقي: " + currentCount;
+                isPaused = false;
+                pauseBtn.innerText = "إيقاف مؤقت";
+                player.play().catch(o => {});
+            } else {
+                if (currentIndex < azkar.length - 1) {
+                    currentIndex++;
+                    currentCount = azkar[currentIndex].count;
+                    updateScreen();
+                } else {
+                    alert("الحمد لله! تم الانتهاء من جميع أذكار الصباح.");
+                    currentIndex = 0;
+                    currentCount = azkar[currentIndex].count;
+                    isStarted = false;
+                    resetToStartScreen();
+                }
+            }
+        }
+
+        // دالة التحكم في الإيقاف المؤقت والتشغيل
+        function togglePause() {
+            if (!isStarted) return;
+            
+            if (!isPaused) {
+                player.pause();
+                isPaused = true;
+                pauseBtn.innerText = "تشغيل";
+                document.getElementById('audio-status').innerText = "تم إيقاف الصوت مؤقتاً";
+            } else {
+                player.play().catch(o => {});
+                isPaused = false;
+                pauseBtn.innerText = "إيقاف مؤقت";
+                document.getElementById('audio-status').innerText = "جاري تشغيل الصوت الحالي...";
+            }
+        }
+
+        function resetToStartScreen() {
+            document.getElementById('azkar-text').innerText = azkar[currentIndex].text;
+            document.getElementById('counter-btn').innerText = "اضغط هنا لتشغيل الصوت والبدء";
+            document.getElementById('progress-text').innerText = "1 / " + azkar.length;
+            document.getElementById('audio-status').innerText = "في انتظار بدء التشغيل...";
+            pauseBtn.style.display = "none"; // إخفاء زر الإيقاف في شاشة البداية
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            resetToStartScreen();
+        });
+    </script>
+</body>
+</html>
