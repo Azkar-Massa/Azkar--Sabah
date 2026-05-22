@@ -49,15 +49,15 @@
             display: flex;
             width: 100%;
             max-width: 550px;
-            gap: 10px;
+            gap: 8px;
         }
         .btn-counter {
             background-color: #40916c;
             color: white;
             border: none;
             flex: 2;
-            padding: 25px;
-            font-size: 24px;
+            padding: 20px 10px;
+            font-size: 22px;
             font-weight: bold;
             cursor: pointer;
             border-radius: 0 0 12px 0;
@@ -65,26 +65,39 @@
             transition: background 0.2s;
             -webkit-tap-highlight-color: transparent;
         }
-        .btn-counter:active {
-            background-color: #1b4332;
-        }
+        .btn-counter:active { background-color: #1b4332; }
+        
         .btn-pause {
-            background-color: #d97706; /* لون برتقالي مميز للإيقاف */
+            background-color: #d97706;
             color: white;
             border: none;
             flex: 1;
-            padding: 25px;
-            font-size: 20px;
+            padding: 20px 5px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: background 0.2s;
+            display: none;
+        }
+        .btn-pause:active { background-color: #b45309; }
+
+        .btn-next {
+            background-color: #2563eb; /* لون أزرق مميز للتخطي */
+            color: white;
+            border: none;
+            flex: 1;
+            padding: 20px 5px;
+            font-size: 18px;
             font-weight: bold;
             cursor: pointer;
             border-radius: 0 0 0 12px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             transition: background 0.2s;
-            display: none; /* يظهر فقط بعد بدء التطبيق */
+            display: none;
         }
-        .btn-pause:active {
-            background-color: #b45309;
-        }
+        .btn-next:active { background-color: #1d4ed8; }
+
         .progress {
             margin-top: 15px;
             font-size: 16px;
@@ -106,7 +119,8 @@
     
     <div class="controls-container">
         <button class="btn-counter" id="counter-btn" onclick="handleClick()">اضغط هنا لتشغيل الصوت والبدء</button>
-        <button class="btn-pause" id="pause-btn" onclick="togglePause()">إيقاف مؤقت</button>
+        <button class="btn-pause" id="pause-btn" onclick="togglePause()">إيقاف</button>
+        <button class="btn-next" id="next-btn" onclick="skipToNext()">التالي ◀</button>
     </div>
     
     <div class="progress" id="progress-text">1 / 23</div>
@@ -116,7 +130,7 @@
 
     <script>
         const azkar = [
-            { text: "بسم الله والحمد لله وصلاة والسلام علي رسول الله.", count: 1, audio: "Morning1.mp3" },
+            { text: "بسم الله والحمد لله، والصلاة والسلام علي رسول الله.", count: 1, audio: "Morning1.mp3" },
             { text: "سبحان الله وبحمده عدد خلقه ورضا نفسه وزنة عرشه ومداد كلماته.", count: 3, audio: "Morning2.mp3" },
             { text: "لا إله إلا وحده لا شريك له له الملك وله الحمد يحيي ويميت بيده الخير وهو علي كل شيء قدير.", count: 1, audio: "Morning3.mp3" },
             { text: "أصبحنا وأصبح الملك لله رب العالمين، اللهم إنا نسألك خير هذا اليوم فتحه ونصره ونوره وبركته وهداه، ونعوذ بك من شر ما فيه وشر ما بعده.", count: 1, audio: "Morning4.mp3" },
@@ -147,6 +161,7 @@
         let isPaused = false;
         const player = document.getElementById('audio-player');
         const pauseBtn = document.getElementById('pause-btn');
+        const nextBtn = document.getElementById('next-btn');
 
         function updateScreen() {
             document.getElementById('azkar-text').innerText = azkar[currentIndex].text;
@@ -155,10 +170,10 @@
             
             player.src = azkar[currentIndex].audio;
             isPaused = false;
-            pauseBtn.innerText = "إيقاف مؤقت";
+            pauseBtn.innerText = "إيقاف";
             
             player.play().then(() => {
-                document.getElementById('audio-status').innerText = "جاري تشغيل الصوت الحالي...";
+                document.getElementById('audio-status').innerText = "جاري تشغيل الصوت الحلي...";
             }).catch(e => {
                 document.getElementById('audio-status').innerText = "اضغط على الزر لتفعيل الصوت";
             });
@@ -170,53 +185,52 @@
                 document.getElementById('counter-btn').innerText = "المتبقي: " + currentCount;
                 player.play();
             } else {
-                if (currentIndex < azkar.length - 1) {
-                    currentIndex++;
-                    currentCount = azkar[currentIndex].count;
-                    updateScreen();
-                } else {
-                    document.getElementById('audio-status').innerText = "تم الانتهاء بحمد الله";
-                    alert("الحمد لله! تم الانتهاء من جميع أذكار الصباح.");
-                    currentIndex = 0;
-                    currentCount = azkar[currentIndex].count;
-                    isStarted = false;
-                    resetToStartScreen();
-                }
+                goToNextZikr();
             }
         };
 
         function handleClick() {
             if (!isStarted) {
                 isStarted = true;
-                pauseBtn.style.display = "block"; // إظهار زر الإيقاف عند البدء
+                pauseBtn.style.display = "block";
+                nextBtn.style.display = "block";
                 updateScreen();
                 return;
             }
 
-            // إذا ضغط يدوياً للتخطي
             player.pause();
             if (currentCount > 1) {
                 currentCount--;
                 document.getElementById('counter-btn').innerText = "المتبقي: " + currentCount;
                 isPaused = false;
-                pauseBtn.innerText = "إيقاف مؤقت";
+                pauseBtn.innerText = "إيقاف";
                 player.play().catch(o => {});
             } else {
-                if (currentIndex < azkar.length - 1) {
-                    currentIndex++;
-                    currentCount = azkar[currentIndex].count;
-                    updateScreen();
-                } else {
-                    alert("الحمد لله! تم الانتهاء من جميع أذكار الصباح.");
-                    currentIndex = 0;
-                    currentCount = azkar[currentIndex].count;
-                    isStarted = false;
-                    resetToStartScreen();
-                }
+                goToNextZikr();
             }
         }
 
-        // دالة التحكم في الإيقاف المؤقت والتشغيل
+        function skipToNext() {
+            if (!isStarted) return;
+            player.pause();
+            goToNextZikr();
+        }
+
+        function goToNextZikr() {
+            if (currentIndex < azkar.length - 1) {
+                currentIndex++;
+                currentCount = azkar[currentIndex].count;
+                updateScreen();
+            } else {
+                document.getElementById('audio-status').innerText = "تم الانتهاء بحمد الله";
+                alert("الحمد لله! تم الانتهاء من جميع أذكار الصباح.");
+                currentIndex = 0;
+                currentCount = azkar[currentIndex].count;
+                isStarted = false;
+                resetToStartScreen();
+            }
+        }
+
         function togglePause() {
             if (!isStarted) return;
             
@@ -228,7 +242,7 @@
             } else {
                 player.play().catch(o => {});
                 isPaused = false;
-                pauseBtn.innerText = "إيقاف مؤقت";
+                pauseBtn.innerText = "إيقاف";
                 document.getElementById('audio-status').innerText = "جاري تشغيل الصوت الحالي...";
             }
         }
@@ -238,7 +252,8 @@
             document.getElementById('counter-btn').innerText = "اضغط هنا لتشغيل الصوت والبدء";
             document.getElementById('progress-text').innerText = "1 / " + azkar.length;
             document.getElementById('audio-status').innerText = "في انتظار بدء التشغيل...";
-            pauseBtn.style.display = "none"; // إخفاء زر الإيقاف في شاشة البداية
+            pauseBtn.style.display = "none";
+            nextBtn.style.display = "none";
         }
 
         document.addEventListener('DOMContentLoaded', () => {
